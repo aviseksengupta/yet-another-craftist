@@ -1,0 +1,46 @@
+{
+  "name": "craft-todoist-sync",
+  "version": "1.0.0",
+  "description": "Bidirectional sync system between Craft.do and Todoist",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "sync:once": "npm run build && node dist/index.js once",
+    "sync:continuous": "npm run build && node dist/index.js continuous",
+    "sync:status": "npm run build && node dist/index.js status",
+    "map": "ts-node src/doc-project-mapper/cli.ts",
+    "map:init": "ts-node src/doc-project-mapper-v2/cli.ts init",
+    "map:build": "ts-node src/doc-project-mapper-v2/cli.ts build",
+    "delete:craft-tasks": "ts-node delete_craft_tasks.ts",
+    "restore:craft-tasks": "ts-node restore_craft_tasks.ts",
+    "db:tasks": "npm run build && node dist/db-admin.js tasks",
+    "db:projects": "npm run build && node dist/db-admin.js projects",
+    "db:documents": "npm run build && node dist/db-admin.js documents",
+    "db:deleteProject": "npm run build && node dist/db-admin.js delete-project",
+    "clean": "rm -rf dist *.db *.log"
+  },
+  "keywords": [
+    "craft",
+    "todoist",
+    "sync",
+    "task-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@doist/todoist-api-typescript": "^3.0.3",
+    "axios": "^1.6.2",
+    "better-sqlite3": "^9.2.2",
+    "dotenv": "^16.3.1",
+    "node-schedule": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.5",
+    "@types/node-schedule": "^2.1.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
