@@ -14,6 +14,7 @@ export function getConfig(): Config {
     databasePath: process.env.DATABASE_PATH || './sync_data.db',
     syncInterval: parseInt(process.env.SYNC_INTERVAL || '300', 10),
     conflictWindow: parseInt(process.env.CONFLICT_WINDOW || '3', 10),
+    showPlanOnly: process.env.SHOW_PLAN_ONLY === 'true',
   };
 
   // Validate required settings
@@ -38,5 +39,6 @@ export function displayConfig(config: Config): void {
   console.log(`  Conflict window: ${config.conflictWindow} seconds`);
   console.log(`  Todoist configured: ${!!config.todoistToken}`);
   console.log(`  Craft configured: ${!!config.craftApiBaseUrl}`);
+  console.log(`  Show plan only: ${config.showPlanOnly}`);
   console.log('');
 }

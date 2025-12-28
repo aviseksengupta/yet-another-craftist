@@ -150,6 +150,7 @@ export interface Config {
   databasePath: string;
   syncInterval: number;
   conflictWindow: number;
+  showPlanOnly: boolean;
 }
 
 export interface SyncOperations {

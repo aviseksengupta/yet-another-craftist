@@ -1,0 +1,59 @@
+name: Export DB to Repo
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore SQLite database from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: sync_data.db
+          key: sync-db-yet-another-craftist
+          restore-keys: |
+            sync-db-
+
+      - name: Check if database exists in cache
+        id: check-db
+        run: |
+          if [ -f sync_data.db ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ No database found in cache"
+            exit 1
+          fi
+
+      - name: Check for database changes
+        id: db-changes
+        run: |
+          if git diff --quiet sync_data.db 2>/dev/null; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✓ Database unchanged, nothing to commit"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "✓ Database has changes, will commit"
+          fi
+
+      - name: Commit and push database
+        if: steps.db-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add sync_data.db
+          git commit -m "chore: export sync database from cache"
+          git push
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.db-changes.outputs.changed }}" == "true" ]; then
+            echo "✅ Database exported to repository"
+          else
+            echo "ℹ️ No changes to export"
+          fi

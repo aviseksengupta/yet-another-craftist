@@ -1,0 +1,45 @@
+name: Import DB to Cache
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check if database exists in repo
+        id: check-db
+        run: |
+          if [ -f sync_data.db ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✓ Database found in repository"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "❌ No database found in repository"
+            exit 1
+          fi
+
+      - name: Delete existing cache
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Attempting to delete existing cache..."
+          gh cache delete sync-db-yet-another-craftist || echo "No existing cache to delete"
+
+      - name: Save database to cache
+        uses: actions/cache/save@v4
+        with:
+          path: sync_data.db
+          key: sync-db-yet-another-craftist
+
+      - name: Summary
+        run: |
+          echo "✅ Database imported from repository to cache"
+          ls -lh sync_data.db

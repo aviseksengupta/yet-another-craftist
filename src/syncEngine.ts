@@ -19,7 +19,8 @@ export class SyncEngine {
     private db: DatabaseManager,
     private todoist: TodoistIntegration,
     private craft: CraftIntegration,
-    private conflictWindow: number = 3
+    private conflictWindow: number = 3,
+    private showPlanOnly: boolean = false
   ) {
     // Verify mapping file exists
     if (!fs.existsSync('./doc-project-mapper-v2.json')) {
@@ -506,6 +507,64 @@ export class SyncEngine {
   }
 
   private async executeSyncOperations(operations: SyncOperations): Promise<void> {
+    // If showPlanOnly is enabled, just log what would be done
+    if (this.showPlanOnly) {
+      console.log('\n📋 PLAN-ONLY MODE: No tasks will be created or modified\n');
+      
+      if (operations.createTodoist.length > 0) {
+        console.log('📝 Would create in Todoist:');
+        operations.createTodoist.forEach(task => {
+          console.log(`  - ${task.title} (from Craft ID: ${task.craftId})`);
+        });
+      }
+      
+      if (operations.updateTodoist.length > 0) {
+        console.log('\n🔄 Would update in Todoist:');
+        operations.updateTodoist.forEach(task => {
+          console.log(`  - ${task.title}`);
+        });
+      }
+      
+      if (operations.completeTodoist.length > 0) {
+        console.log('\n✅ Would complete in Todoist:');
+        operations.completeTodoist.forEach(task => {
+          console.log(`  - ${task.title}`);
+        });
+      }
+      
+      if (operations.createCraft.length > 0) {
+        console.log('\n📝 Would create in Craft:');
+        operations.createCraft.forEach(task => {
+          const projectInfo = task.projectId ? ` (from Todoist project: ${task.projectId})` : '';
+          console.log(`  - ${task.title}${projectInfo}`);
+        });
+      }
+      
+      if (operations.updateCraft.length > 0) {
+        console.log('\n🔄 Would update in Craft:');
+        operations.updateCraft.forEach(task => {
+          console.log(`  - ${task.title}`);
+        });
+      }
+      
+      if (operations.completeCraft.length > 0) {
+        console.log('\n✅ Would complete in Craft:');
+        operations.completeCraft.forEach(task => {
+          console.log(`  - ${task.title}`);
+        });
+      }
+      
+      if (operations.conflicts.length > 0) {
+        console.log('\n⚠️  Would log conflicts:');
+        operations.conflicts.forEach(task => {
+          console.log(`  - ${task.title}`);
+        });
+      }
+      
+      console.log('\n📋 Plan-only mode complete. No changes were made.\n');
+      return;
+    }
+    
     // Create tasks in Todoist
     for (const task of operations.createTodoist) {
       try {

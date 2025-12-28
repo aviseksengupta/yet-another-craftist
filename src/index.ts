@@ -33,7 +33,8 @@ class SyncRunner {
       this.db,
       this.todoist,
       this.craft,
-      this.config.conflictWindow
+      this.config.conflictWindow,
+      this.config.showPlanOnly
     );
 
     console.log('Sync runner initialized successfully');
