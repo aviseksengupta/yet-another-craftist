@@ -23,14 +23,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Restore SQLite database from cache
-        uses: actions/cache/restore@v4
-        with:
-          path: sync_data.db
-          key: sync-db-yet-another-craftist
-          restore-keys: |
-            sync-db-
-
       - name: Install dependencies
         run: npm ci
 
@@ -43,9 +35,21 @@ jobs:
           CONFLICT_WINDOW: 3
         run: npm run sync:once
 
-      - name: Save SQLite database to cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: sync_data.db
-          key: sync-db-yet-another-craftist
+      - name: Check for database changes
+        id: db-changes
+        run: |
+          if git diff --quiet sync_data.db 2>/dev/null || [ ! -f sync_data.db ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push database changes
+        if: steps.db-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull --rebase origin ${{ github.ref_name }}
+          git add sync_data.db
+          git commit -m "chore: update sync database [skip ci]"
+          git push

@@ -15,12 +15,6 @@ build/
 .env.local
 .env.*.local
 
-# Database files
-*.db
-*.db-journal
-*.db.backup*
-*.sqlite
-*.sqlite3
 
 # Python
 __pycache__/
