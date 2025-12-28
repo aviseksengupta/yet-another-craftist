@@ -23,6 +23,7 @@ class SyncRunner {
   private scheduleJob?: schedule.Job;
   private lockFilePath: string;
   private hasLock: boolean = false;
+  private isCleanedUp: boolean = false;
 
   constructor() {
     // Load configuration
@@ -225,6 +226,11 @@ class SyncRunner {
   }
 
   private cleanup(): void {
+    if (this.isCleanedUp) {
+      return; // Already cleaned up, prevent double cleanup
+    }
+    this.isCleanedUp = true;
+
     console.log('Cleaning up resources...');
     try {
       this.db.close();

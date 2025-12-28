@@ -49,7 +49,7 @@ jobs:
         run: npm run sync:once
 
       - name: Save SQLite database to cache
-        if: always()
+        if: success()
         uses: actions/cache/save@v4
         with:
           path: |

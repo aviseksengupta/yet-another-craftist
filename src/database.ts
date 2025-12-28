@@ -10,6 +10,24 @@ export class DatabaseManager {
 
   constructor(dbPath: string = './sync_data.db') {
     this.db = new Database(dbPath);
+    
+    // Check database integrity
+    try {
+      const integrityCheck = this.db.pragma('integrity_check', { simple: true }) as any;
+      if (integrityCheck !== 'ok' && integrityCheck[0]?.integrity_check !== 'ok') {
+        console.error('Database integrity check failed:', integrityCheck);
+        console.error('Database is corrupted. Please delete the database file and cache to start fresh.');
+        throw new Error('Database is corrupted. Cannot proceed with sync.');
+      }
+    } catch (error: any) {
+      if (error.message?.includes('corrupted') || error.code === 'SQLITE_CORRUPT') {
+        console.error('Database is corrupted and cannot be opened.');
+        throw new Error('Database is corrupted. Please delete sync_data.db* files and clear GitHub Actions cache.');
+      }
+      // If it's not a corruption error, continue
+      console.warn('Could not verify database integrity:', error.message);
+    }
+
     this.db.pragma('journal_mode = WAL');
     this.createTables();
     this.runMigrations();
@@ -372,16 +390,42 @@ export class DatabaseManager {
   }
 
   close(): void {
+    // Check if database exists and is open
+    if (!this.db) {
+      return;
+    }
+
+    // Check if database is still open using the open property
+    const isOpen = typeof this.db.open === 'boolean' ? this.db.open : true;
+    
+    if (!isOpen) {
+      console.log('Database already closed, skipping cleanup');
+      return;
+    }
+
     try {
       // Checkpoint WAL to ensure all changes are written to main database file
       // This is critical to avoid corruption in cached environments
       this.db.pragma('wal_checkpoint(TRUNCATE)');
       console.log('Database WAL checkpoint completed');
-    } catch (error) {
-      console.error('Error during WAL checkpoint:', error);
+    } catch (error: any) {
+      // Ignore errors if database is already closed or corrupted
+      if (error.message?.includes('not open') || error.code === 'SQLITE_CORRUPT') {
+        console.log('Skipping WAL checkpoint - database not accessible');
+      } else {
+        console.error('Error during WAL checkpoint:', error);
+      }
+      // Continue to close even if checkpoint fails
     }
     
-    // Close the database connection
-    this.db.close();
+    try {
+      // Close the database connection
+      this.db.close();
+    } catch (error: any) {
+      // Only log if it's not an "already closed" error
+      if (!error.message?.includes('not open')) {
+        console.error('Error closing database connection:', error);
+      }
+    }
   }
 }
