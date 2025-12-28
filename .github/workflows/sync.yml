@@ -12,6 +12,8 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      CACHE_KEY: ${{ vars.CACHE_KEY }}
     
     steps:
       - name: Checkout repository
@@ -26,8 +28,11 @@ jobs:
       - name: Restore SQLite database from cache
         uses: actions/cache/restore@v4
         with:
-          path: sync_data.db
-          key: sync-db-yet-another-craftist
+          path: |
+            sync_data.db
+            sync_data.db-shm
+            sync_data.db-wal
+          key: ${{ env.CACHE_KEY }}
           restore-keys: |
             sync-db-
 
@@ -47,5 +52,8 @@ jobs:
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: sync_data.db
-          key: sync-db-yet-another-craftist
+          path: |
+            sync_data.db
+            sync_data.db-shm
+            sync_data.db-wal
+          key: ${{ env.CACHE_KEY }}

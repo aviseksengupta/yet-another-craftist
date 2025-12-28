@@ -372,6 +372,16 @@ export class DatabaseManager {
   }
 
   close(): void {
+    try {
+      // Checkpoint WAL to ensure all changes are written to main database file
+      // This is critical to avoid corruption in cached environments
+      this.db.pragma('wal_checkpoint(TRUNCATE)');
+      console.log('Database WAL checkpoint completed');
+    } catch (error) {
+      console.error('Error during WAL checkpoint:', error);
+    }
+    
+    // Close the database connection
     this.db.close();
   }
 }

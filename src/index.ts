@@ -5,6 +5,8 @@
  */
 
 import * as schedule from 'node-schedule';
+import * as fs from 'fs';
+import * as path from 'path';
 import { getConfig, displayConfig } from './config';
 import { DatabaseManager } from './database';
 import { TodoistIntegration } from './todoist';
@@ -19,10 +21,16 @@ class SyncRunner {
   private config: ReturnType<typeof getConfig>;
   private running: boolean = false;
   private scheduleJob?: schedule.Job;
+  private lockFilePath: string;
+  private hasLock: boolean = false;
 
   constructor() {
     // Load configuration
     this.config = getConfig();
+
+    // Set lock file path (same directory as database)
+    const dbDir = path.dirname(this.config.databasePath);
+    this.lockFilePath = path.join(dbDir, '.sync.lock');
 
     // Initialize components
     console.log('Initializing sync components...');
@@ -48,7 +56,71 @@ class SyncRunner {
     await this.syncEngine.initialize();
   }
 
+  /**
+   * Attempt to acquire the lock file
+   * Returns true if lock acquired, false if another instance is running
+   */
+  private acquireLock(): boolean {
+    try {
+      // Check if lock file exists and is still valid
+      if (fs.existsSync(this.lockFilePath)) {
+        const lockContent = fs.readFileSync(this.lockFilePath, 'utf8');
+        const lockData = JSON.parse(lockContent);
+        const lockAge = Date.now() - lockData.timestamp;
+        
+        // If lock is older than 30 minutes, consider it stale and remove it
+        if (lockAge > 30 * 60 * 1000) {
+          console.log('Removing stale lock file...');
+          fs.unlinkSync(this.lockFilePath);
+        } else {
+          console.log('Another sync instance is already running.');
+          console.log(`Lock acquired at: ${new Date(lockData.timestamp).toISOString()}`);
+          console.log(`PID: ${lockData.pid}`);
+          return false;
+        }
+      }
+
+      // Create lock file
+      const lockData = {
+        pid: process.pid,
+        timestamp: Date.now(),
+        startedAt: new Date().toISOString()
+      };
+      fs.writeFileSync(this.lockFilePath, JSON.stringify(lockData, null, 2));
+      this.hasLock = true;
+      console.log(`Lock acquired (PID: ${process.pid})`);
+      return true;
+    } catch (error) {
+      console.error('Failed to acquire lock:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Release the lock file
+   */
+  private releaseLock(): void {
+    if (this.hasLock && fs.existsSync(this.lockFilePath)) {
+      try {
+        fs.unlinkSync(this.lockFilePath);
+        this.hasLock = false;
+        console.log('Lock released');
+      } catch (error) {
+        console.error('Failed to release lock:', error);
+      }
+    }
+  }
+
   async runOnce(): Promise<void> {
+    // Try to acquire lock
+    if (!this.acquireLock()) {
+      console.log('Exiting: Another sync instance is already running.');
+      console.log('This sync will be skipped and retried in the next cycle.');
+      // Close database connection before exiting
+      this.db.close();
+      process.exit(0);
+    }
+
     try {
       console.log(`\n${'='.repeat(80)}`);
       console.log(`Starting sync at ${new Date().toISOString()}`);
@@ -63,6 +135,9 @@ class SyncRunner {
     } catch (error) {
       console.error('Sync failed:', error);
       throw error;
+    } finally {
+      // Always cleanup, even on error
+      this.cleanup();
     }
   }
 
@@ -151,7 +226,13 @@ class SyncRunner {
 
   private cleanup(): void {
     console.log('Cleaning up resources...');
-    this.db.close();
+    try {
+      this.db.close();
+      console.log('Database connection closed');
+    } catch (error) {
+      console.error('Error closing database:', error);
+    }
+    this.releaseLock();
     console.log('Shutdown complete');
   }
 }
@@ -167,8 +248,10 @@ async function main() {
     process.exit(1);
   }
 
+  let runner: SyncRunner | null = null;
+
   try {
-    const runner = new SyncRunner();
+    runner = new SyncRunner();
 
     if (command === 'once') {
       await runner.runOnce();
@@ -181,6 +264,15 @@ async function main() {
     process.exit(0);
   } catch (error) {
     console.error('Fatal error:', error);
+    // Ensure cleanup happens even on fatal error
+    if (runner) {
+      try {
+        // @ts-ignore - accessing private method for cleanup
+        runner['cleanup']();
+      } catch (cleanupError) {
+        console.error('Error during cleanup:', cleanupError);
+      }
+    }
     process.exit(1);
   }
 }
