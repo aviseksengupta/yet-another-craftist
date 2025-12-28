@@ -33,8 +33,6 @@ jobs:
             sync_data.db-shm
             sync_data.db-wal
           key: ${{ env.CACHE_KEY }}
-          restore-keys: |
-            sync-db-
 
       - name: Install dependencies
         run: npm ci
