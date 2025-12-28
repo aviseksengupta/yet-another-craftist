@@ -14,7 +14,10 @@ jobs:
       - name: Restore SQLite database from cache
         uses: actions/cache/restore@v4
         with:
-          path: sync_data.db
+          path: |
+            sync_data.db
+            sync_data.db-shm
+            sync_data.db-wal
           key: sync-db-yet-another-craftist
           restore-keys: |
             sync-db-
@@ -44,6 +47,9 @@ jobs:
       - name: Commit and push database
         if: steps.db-changes.outputs.changed == 'true'
         run: |
+          if [ -f sync_data.db ]; then
+            node scripts/checkpoint-db.js || true
+          fi
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add sync_data.db

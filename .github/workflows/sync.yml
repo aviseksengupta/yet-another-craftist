@@ -46,6 +46,25 @@ jobs:
           CONFLICT_WINDOW: 3
         run: npm run sync:once
 
+      - name: Ensure DB checkpoint before caching
+        if: success()
+        run: |
+          if [ -f sync_data.db ]; then
+            echo "Running WAL checkpoint to flush WAL to main DB"
+            sudo apt-get update -qq && sudo apt-get install -y -qq sqlite3 || true
+            sqlite3 sync_data.db "PRAGMA wal_checkpoint(TRUNCATE);" || true
+            ls -lah sync_data.db* || true
+          else
+            echo "No database file present to checkpoint"
+          fi
+
+      - name: Run Node DB checkpoint script
+        if: success()
+        env:
+          DATABASE_PATH: ./sync_data.db
+        run: |
+          node scripts/checkpoint-db.js
+
       - name: Save SQLite database to cache
         if: success()
         uses: actions/cache/save@v4
