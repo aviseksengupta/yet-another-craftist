@@ -117,9 +117,9 @@ class SyncRunner {
     if (!this.acquireLock()) {
       console.log('Exiting: Another sync instance is already running.');
       console.log('This sync will be skipped and retried in the next cycle.');
-      // Close database connection before exiting
-      this.db.close();
-      process.exit(0);
+      // Close database connection before exiting - don't exit immediately
+      this.cleanup();
+      return; // Exit gracefully without process.exit
     }
 
     try {
@@ -222,7 +222,7 @@ class SyncRunner {
     }
 
     this.cleanup();
-    process.exit(0);
+    // Allow cleanup to complete before Node exits naturally
   }
 
   private cleanup(): void {
@@ -266,8 +266,6 @@ async function main() {
     } else if (command === 'status') {
       await runner.showStatus();
     }
-
-    process.exit(0);
   } catch (error) {
     console.error('Fatal error:', error);
     // Ensure cleanup happens even on fatal error
