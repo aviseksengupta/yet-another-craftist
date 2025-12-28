@@ -1,0 +1,51 @@
+name: Sync Tasks
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: craft-todoist-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore SQLite database from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: sync_data.db
+          key: sync-db-yet-another-craftist
+          restore-keys: |
+            sync-db-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run sync
+        env:
+          TODOIST_TOKEN: ${{ secrets.TODOIST_TOKEN }}
+          CRAFT_API_BASE_URL: ${{ secrets.CRAFT_API_BASE_URL }}
+          DATABASE_PATH: ./sync_data.db
+          SYNC_INTERVAL: 300
+          CONFLICT_WINDOW: 3
+        run: npm run sync:once
+
+      - name: Save SQLite database to cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: sync_data.db
+          key: sync-db-yet-another-craftist
