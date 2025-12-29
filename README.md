@@ -1,3 +1,9 @@
+# Important
+* Everything other than this is auto generated - so take it with a pinch of salt till I actually write it myself.
+* You need to run npm run map:init. This gives you all craft folders and todoist projects in the file `doc-project-mapping-manual.json`. All folders and todoist projects are mapped to null initially. This means all tasks from todoist will land is "Task Inbox" document in your Craft. All tasks from craft will land in Inbox in your Todoist.
+* I have commited my personal `doc-project-mapping-manual.json` json document for an example. PLEASE DELETE THIS along with `doc-project-mapper-v2.json` before running npm run map:init. Use this as an example to connect todoist projects to craft files and craft folders and files to todoist projects. Once done run npm run map:build. This will build the mapping and it will use this mapping for the rest of the sync. If there is anything left over - it will go to inbox on both sides.
+* Make sure you have a "Task Inbox" document created somewhere in Craft. I know craft has a Task inbox built in, but its a pain to delete all tasks from that inbox coz it is bound to mess up till this gets stable. So till I have confidence I am using a specific document as the inbox in craft. 
+
 # Craft.do ↔ Todoist Sync System
 
 A robust bidirectional synchronization system between Craft.do and Todoist for seamless task management across both platforms.
