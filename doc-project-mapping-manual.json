@@ -30,7 +30,8 @@
     "Purchases": "nosync",
     "Jim Work": "Jim Work Overview",
     "Repeat": "nosync",
-    "Purchase List": "nosync"
+    "Purchase List": "nosync",
+    "Baby": "The Baby"
   },
   "craftFolders": {
     "Jim Work": "Jim Work",
@@ -64,7 +65,9 @@
     "Work > Meetings and Discussions": null,
     "Jim Work > Research": null,
     "Professional > Business Analysis > AI Enabled Systems": null,
-    "Work > Project Initiatives > Project Work Entities": null
+    "Work > Project Initiatives > Project Work Entities": null,
+    "Personal > Health > Psych": "MH Initiatives Current",
+    "Personal > Baby": "Baby"
   },
   "craftDocuments": {
     "Work Task Inbox": "Vista Work",
