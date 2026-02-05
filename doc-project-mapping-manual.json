@@ -31,7 +31,9 @@
     "Jim Work": "Jim Work Overview",
     "Repeat": "nosync",
     "Purchase List": "nosync",
-    "Baby": "The Baby"
+    "Baby": "The Baby",
+    "SELM": "SELM Decomissioning",
+    "Miscellaneous": null
   },
   "craftFolders": {
     "Jim Work": "Jim Work",
@@ -81,6 +83,7 @@
     "Finance Overview": "Finance",
     "Personal Projects": "Craftist",
     "House Purchase Overview": "House Purchase",
-    "Health Tasks": "Health and Baby"
+    "Health Tasks": "Health and Baby",
+    "SELM Decomissioning": "SELM"
   }
 }
